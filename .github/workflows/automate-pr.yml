@@ -1,0 +1,49 @@
+name: Automate PR
+
+on:
+  push:
+    branches:
+      - main  # or any branch where you want to trigger automation
+
+jobs:
+  automate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create a Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Install GitHub CLI
+          sudo apt-get install gh
+
+          # Authenticate with GitHub
+          gh auth login --with-token <<< $GITHUB_TOKEN
+
+          # Create a new branch and commit changes
+          git checkout -b new-feature-branch
+          echo "This is a new feature" > feature.txt
+          git add feature.txt
+          git commit -m "Add new feature"
+
+          # Push branch to GitHub
+          git push origin new-feature-branch
+
+          # Create a Pull Request
+          gh pr create --title "Add new feature" --body "This PR adds a new feature" --base main --head new-feature-branch
+
+      - name: Merge Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Install GitHub CLI
+          sudo apt-get install gh
+
+          # Authenticate with GitHub
+          gh auth login --with-token <<< $GITHUB_TOKEN
+
+          # Merge the Pull Request
+          PR_NUMBER=$(gh pr list --state open --json number --jq '.[0].number')
+          gh pr merge $PR_NUMBER --merge
